@@ -1,0 +1,54 @@
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Symbol rate
+symbol_rate = 30  # MSym/s
+
+# MODCOD data
+modulations = ["QPSK 3/4", "8PSK 3/4", "16APSK 5/6", "32APSK 3/4"]
+spectral_eff = [1.5, 2.25, 3.33, 3.75]  # bps/Hz
+ebn0 = [5.5, 8.5, 10.5, 12.5]  # dB
+
+# Reed-Solomon + CRC overheads
+rs_eff = 223/255  # ~0.8745
+crc_eff = 0.956
+total_eff = rs_eff * crc_eff  # Combined payload efficiency
+
+# Net coded data rates (after overheads)
+gross_rates = [eta * symbol_rate for eta in spectral_eff]  # Mbps
+net_rates = [r * total_eff for r in gross_rates]
+
+# Pass durations
+pass_durations = [5*60, 10*60, 15*60]  # seconds
+
+# Data volumes (bits)
+data_volumes = {mod: [rate * 1e6 * t for t in pass_durations] for mod, rate in zip(modulations, net_rates)}
+
+# --- Chart 1: Bar chart of data volume per pass ---
+x = np.arange(len(pass_durations))
+width = 0.18
+
+fig, ax = plt.subplots(figsize=(10,6))
+for i, mod in enumerate(modulations):
+    ax.bar(x + i*width, [v/8/1e9 for v in data_volumes[mod]], width, label=mod)  # Convert to GB
+
+ax.set_xticks(x + width*1.5)
+ax.set_xticklabels(['5 min', '10 min', '15 min'])
+ax.set_ylabel("Data Volume (GB)")
+ax.set_title("Net Data Volume per Pass (after RS + CRC)")
+ax.legend()
+plt.tight_layout()
+plt.show()
+
+# --- Chart 2: Scatter plot spectral efficiency vs Eb/N0 ---
+fig, ax = plt.subplots(figsize=(8,6))
+for i, mod in enumerate(modulations):
+    ax.scatter(spectral_eff[i], ebn0[i], s=100, label=mod)
+    ax.text(spectral_eff[i]+0.05, ebn0[i], mod)
+
+ax.set_xlabel("Spectral Efficiency (bps/Hz)")
+ax.set_ylabel("Required Eb/N0 (dB)")
+ax.set_title("Spectral Efficiency vs Required Eb/N0 for MODCODs")
+ax.grid(True)
+plt.tight_layout()
+plt.show()
