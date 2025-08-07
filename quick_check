@@ -3,3 +3,91 @@ Payload Nominal,500,min_500ltan10_plus10_velocity_nadir_POWER_GENERATION_WATTS
 Imaging,100,min_500ltan10_plus10_velocity_nadir_POWER_GENERATION_WATTS
 Readout,100,min_500ltan10_plus10_velocity_nadir_POWER_GENERATION_WATTS
 Payload Nominal,740,min_500ltan10_plus10_velocity_nadir_POWER_GENERATION_WATTS
+
+,,,,,,,
+,Task Number,Task Name,Duration (days),Start,Finish,Predecessors,Successors
+,1,Inputs,,,,,
+,2,Qualification Status List,0.25,Wed 23/07/25,Wed 23/07/25,,16
+,3,DDVP,0.25,Wed 23/07/25,Wed 23/07/25,,17
+,4,AIV Plan,0.25,Wed 23/07/25,Wed 23/07/25,,18
+,5,Reliability and Availability,0.25,Wed 23/07/25,Wed 23/07/25,,19
+,6,FMECA,0.25,Wed 23/07/25,Wed 23/07/25,,20
+,7,Performance Analysis - Thermal,0.25,Wed 23/07/25,Wed 23/07/25,,21
+,8,Performance Analysis - Power,0.25,Wed 23/07/25,Wed 23/07/25,,22
+,9,Performance Analysis - Data,0.25,Thu 24/07/25,Thu 24/07/25,,23
+,10,Performance Analysis - Link,0.25,Thu 24/07/25,Thu 24/07/25,,24
+,11,Performance Analysis - Mass & Volume,0.25,Thu 24/07/25,Thu 24/07/25,,25
+,12,Performance Analysis - Vibration,0.25,Thu 24/07/25,Thu 24/07/25,,26
+,13,Payload to Platform ICD,0.25,Thu 24/07/25,Thu 24/07/25,,27
+,14,Spacecraft Design Document,0.25,Thu 24/07/25,Thu 24/07/25,,28
+,15,Preparation,,,,,
+,16,Qualification Status List,0,Fri 25/07/25,Fri 25/07/25,2,30
+,17,DDVP,1,Fri 25/07/25,Fri 25/07/25,3,31
+,18,AIV Plan,1,Mon 28/07/25,Mon 28/07/25,4,32
+,19,Reliability and Availability,1,Tue 29/07/25,Tue 29/07/25,5,33
+,20,FMECA,1,Wed 30/07/25,Wed 30/07/25,6,34
+,21,Performance Analysis - Thermal,2,Thu 31/07/25,Fri 01/08/25,7,35
+,22,Performance Analysis - Power,2,Mon 04/08/25,Tue 05/08/25,8,36
+,23,Performance Analysis - Data,1,Wed 06/08/25,Wed 06/08/25,9,37
+,24,Performance Analysis - Link,1,Thu 07/08/25,Thu 07/08/25,10,38
+,25,Performance Analysis - Mass & Volume,0.5,Fri 08/08/25,Fri 08/08/25,11,39
+,26,Performance Analysis - Vibration,0.5,Fri 08/08/25,Fri 08/08/25,12,40
+,27,Payload to Platform ICD,3,Mon 11/08/25,Wed 13/08/25,13,41
+,28,Spacecraft Design Document,2,Thu 14/08/25,Fri 15/08/25,14,42
+,29,Outputs,,,,,
+,30,Qualification Status List,1,Mon 01/09/25,Mon 01/09/25,16,44
+,31,DDVP,2,Tue 02/09/25,Wed 03/09/25,17,45
+,32,AIV Plan,2,Thu 04/09/25,Fri 05/09/25,18,46
+,33,Reliability and Availability,1,Mon 08/09/25,Mon 08/09/25,19,47
+,34,FMECA,1,Tue 09/09/25,Tue 09/09/25,20,48
+,35,Performance Analysis - Thermal,1,Wed 10/09/25,Wed 10/09/25,21,49
+,36,Performance Analysis - Power,1,Thu 11/09/25,Thu 11/09/25,22,50
+,37,Performance Analysis - Data,0.5,Fri 12/09/25,Fri 12/09/25,23,51
+,38,Performance Analysis - Link,0.5,Fri 12/09/25,Fri 12/09/25,24,52
+,39,Performance Analysis - Mass & Volume,0.5,Mon 22/09/25,Mon 22/09/25,25,53
+,40,Performance Analysis - Vibration,0.5,Mon 22/09/25,Mon 22/09/25,26,54
+,41,Payload to Platform ICD,2,Tue 23/09/25,Wed 24/09/25,27,55
+,42,Spacecraft Design Document,2,Thu 25/09/25,Fri 26/09/25,28,56
+,43,Review Time,,,,,
+,44,Qualification Status List,,Mon 01/09/25,Mon 29/09/25,30,58
+,45,DDVP,,Wed 03/09/25,Mon 29/09/25,31,59
+,46,AIV Plan,,Fri 05/09/25,Mon 29/09/25,32,60
+,47,Reliability and Availability,,Mon 08/09/25,Mon 29/09/25,33,61
+,48,FMECA,,Tue 09/09/25,Mon 29/09/25,34,62
+,49,Performance Analysis - Thermal,,Wed 10/09/25,Tue 30/09/25,35,63
+,50,Performance Analysis - Power,,Thu 11/09/25,Tue 30/09/25,36,64
+,51,Performance Analysis - Data,,Fri 12/09/25,Tue 30/09/25,37,65
+,52,Performance Analysis - Link,,Fri 12/09/25,Tue 30/09/25,38,66
+,53,Performance Analysis - Mass & Volume,,Mon 22/09/25,Wed 01/10/25,39,67
+,54,Performance Analysis - Vibration,,Mon 22/09/25,Wed 01/10/25,40,68
+,55,Payload to Platform ICD,,Wed 24/09/25,Wed 01/10/25,41,69
+,56,Spacecraft Design Document,,Fri 26/09/25,Wed 01/10/25,42,70
+,57,Update Time,,,,,
+,58,Qualification Status List,0,Mon 29/09/25,Mon 29/09/25,44,72
+,59,DDVP,0.25,Mon 29/09/25,Mon 29/09/25,45,73
+,60,AIV Plan,0.25,Mon 29/09/25,Mon 29/09/25,46,74
+,61,Reliability and Availability,0.25,Mon 29/09/25,Mon 29/09/25,47,75
+,62,FMECA,0.25,Mon 29/09/25,Mon 29/09/25,48,76
+,63,Performance Analysis - Thermal,0.25,Tue 30/09/25,Tue 30/09/25,49,77
+,64,Performance Analysis - Power,0.25,Tue 30/09/25,Tue 30/09/25,50,78
+,65,Performance Analysis - Data,0.25,Tue 30/09/25,Tue 30/09/25,51,79
+,66,Performance Analysis - Link,0.25,Tue 30/09/25,Tue 30/09/25,52,80
+,67,Performance Analysis - Mass & Volume,0.25,Wed 01/10/25,Wed 01/10/25,53,81
+,68,Performance Analysis - Vibration,0.25,Wed 01/10/25,Wed 01/10/25,54,82
+,69,Payload to Platform ICD,0.25,Wed 01/10/25,Wed 01/10/25,55,83
+,70,Spacecraft Design Document,0.25,Wed 01/10/25,Wed 01/10/25,56,84
+,71,Release Date,,,,,
+,72,Qualification Status List,0,Thu 02/10/25,Thu 02/10/25,58,
+,73,DDVP,0.25,Thu 02/10/25,Thu 02/10/25,59,
+,74,AIV Plan,0.25,Thu 02/10/25,Thu 02/10/25,60,
+,75,Reliability and Availability,0.25,Thu 02/10/25,Thu 02/10/25,61,
+,76,FMECA,0.25,Thu 02/10/25,Thu 02/10/25,62,
+,77,Performance Analysis - Thermal,0.16,Fri 03/10/25,Fri 03/10/25,63,
+,78,Performance Analysis - Power,0.16,Fri 03/10/25,Fri 03/10/25,64,
+,79,Performance Analysis - Data,0.16,Fri 03/10/25,Fri 03/10/25,65,
+,80,Performance Analysis - Link,0.16,Fri 03/10/25,Fri 03/10/25,66,
+,81,Performance Analysis - Mass & Volume,0.16,Fri 03/10/25,Mon 06/10/25,67,
+,82,Performance Analysis - Vibration,0.16,Fri 03/10/25,Mon 06/10/25,68,
+,83,Payload to Platform ICD,0.25,Mon 06/10/25,Mon 06/10/25,69,
+,84,Spacecraft Design Document,0.25,Mon 06/10/25,Mon 06/10/25,70,
+,85,Earliest Completion Date of All Deliverables,39.71,Mon 06/10/25,Mon 06/10/25,,
