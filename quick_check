@@ -1,0 +1,5 @@
+mode,time in mode,power generated
+Payload Nominal,500,min_500ltan10_plus10_velocity_nadir_POWER_GENERATION_WATTS
+Imaging,100,min_500ltan10_plus10_velocity_nadir_POWER_GENERATION_WATTS
+Readout,100,min_500ltan10_plus10_velocity_nadir_POWER_GENERATION_WATTS
+Payload Nominal,740,min_500ltan10_plus10_velocity_nadir_POWER_GENERATION_WATTS
