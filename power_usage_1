@@ -1,0 +1,84 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
+
+# --- Config ---
+power_req_file = "power_requirements.csv"
+power_modes_file = "power_modes.csv"
+output_folder = "power_analysis"
+os.makedirs(output_folder, exist_ok=True)
+
+# --- Margins by Source ---
+margins = {
+    "Computed": 0.10,
+    "Datasheet": 0.10,
+    "Flight Model": 0.02,
+    "Generic Assumption": 0.20,
+    "LAB Measurement": 0.05,
+    "Requirement": 0.25,
+    "Supplier": 0.00
+}
+
+# --- Load data ---
+power_requirements = pd.read_csv(power_req_file)
+power_modes = pd.read_csv(power_modes_file)
+
+# Create lookup: {(Subsystem, Mode): Adjusted Power}
+power_lookup = {}
+for _, row in power_requirements.iterrows():
+    subsystem = row['Subsystem'].strip()
+    subsys_mode = str(row['Subsys Mode']).strip()
+    base_power = float(row['Power Consumption (W)'])
+    source = row['Source'].strip()
+    margin = margins.get(source, 0.0)  # default to 0% if not found
+    adjusted_power = base_power * (1 + margin)
+    power_lookup[(subsystem, subsys_mode)] = adjusted_power
+
+# --- Build matrix ---
+matrix_data = []
+for _, row in power_modes.iterrows():
+    mode_name = str(row["Mode"]).strip()
+    total_power = 0
+    mode_data = {"Mode": mode_name}
+    for subsystem, status in row.iloc[1:].items():
+        key = (subsystem.strip(), str(status).strip())
+        power = power_lookup.get(key, 0.0)
+        mode_data[subsystem.strip()] = power
+        total_power += power
+    mode_data["Total Power (W)"] = total_power
+    matrix_data.append(mode_data)
+
+matrix_df = pd.DataFrame(matrix_data)
+matrix_csv = os.path.join(output_folder, "power_matrix_structured.csv")
+matrix_df.to_csv(matrix_csv, index=False)
+
+# --- Plot: Total power per mode with highlight ---
+plt.figure(figsize=(10, 6))
+colors = ["lightblue"] * len(matrix_df)
+max_idx = matrix_df["Total Power (W)"].idxmax()
+colors[max_idx] = "orange"
+bars = plt.bar(matrix_df["Mode"], matrix_df["Total Power (W)"], color=colors)
+plt.xticks(rotation=45, ha="right")
+plt.ylabel("Total Power (W)")
+plt.title("Total Power Consumption per Mode (Highest Highlighted)")
+for bar in bars:
+    plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.3,
+             f"{bar.get_height():.1f}", ha='center', va='bottom', fontsize=8)
+plt.tight_layout()
+total_bar_chart = os.path.join(output_folder, "total_power_per_mode_highlighted.png")
+plt.savefig(total_bar_chart, dpi=300)
+plt.close()
+
+# --- Plot: Stacked bar of subsystems ---
+subsystems = [c for c in matrix_df.columns if c not in ["Mode", "Total Power (W)"]]
+matrix_df.set_index("Mode", inplace=True)
+matrix_df[subsystems].plot(kind="bar", stacked=True, figsize=(12, 7), colormap="tab20")
+plt.ylabel("Power (W)")
+plt.title("Subsystem Power Consumption by Mode (Stacked)")
+plt.xticks(rotation=45, ha="right")
+plt.tight_layout()
+stacked_bar_chart = os.path.join(output_folder, "stacked_power_by_subsystem.png")
+plt.savefig(stacked_bar_chart, dpi=300)
+plt.close()
+
+print(f"Analysis updated with margins applied. Outputs in {output_folder}")
