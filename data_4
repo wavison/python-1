@@ -1,0 +1,63 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import os
+
+# === CONFIGURATION ===
+input_csv = "data_budget_plots/multi_day_download_feasibility.csv"
+output_folder = "data_budget_plots"
+os.makedirs(output_folder, exist_ok=True)
+
+# === LOAD DATA ===
+df_multi = pd.read_csv(input_csv)
+scenarios = df_multi["Scenario"].unique()
+
+# === HEATMAPS: One per scenario ===
+for scenario in scenarios:
+    df_s = df_multi[df_multi["Scenario"] == scenario]
+    heatmap_data = df_s.pivot(index="Days", columns="Passes", values="%_Transferred")
+
+    plt.figure(figsize=(8, 5))
+    sns.heatmap(
+        heatmap_data,
+        annot=True,
+        fmt=".1f",
+        cmap="YlGnBu",
+        vmin=0,
+        vmax=100,
+        cbar_kws={'label': '% Transferred'}
+    )
+    plt.title(f"{scenario} - Data Transfer Feasibility (% Backlog Transferred)\n(Using 10-min Passes, 16APSK 5/6)")
+    plt.ylabel("Days of Data Stored")
+    plt.xlabel("Number of Passes Available")
+    plt.tight_layout()
+
+    # Save chart
+    heatmap_path = os.path.join(output_folder, f"{scenario}_heatmap.png")
+    plt.savefig(heatmap_path, dpi=300)
+    plt.close()
+
+# === LINE CHART: All scenarios for 3-day backlog ===
+df_3days = df_multi[df_multi["Days"] == 3]
+
+plt.figure(figsize=(10, 6))
+for scenario in scenarios:
+    df_s = df_3days[df_3days["Scenario"] == scenario]
+    plt.plot(df_s["Passes"], df_s["%_Transferred"], marker='o', label=scenario)
+
+plt.axhline(100, color="gray", linestyle="--", linewidth=1)
+plt.title("Data Transfer Feasibility Over 3 Days of Storage\n(16APSK 5/6, 10-min Passes)")
+plt.xlabel("Number of Passes Available")
+plt.ylabel("% of Backlog Transferred")
+plt.xticks(df_3days["Passes"].unique())
+plt.ylim(0, 110)
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+
+# Save chart
+combined_path = os.path.join(output_folder, "transfer_feasibility_3days.png")
+plt.savefig(combined_path, dpi=300)
+plt.close()
+
+print("✅ Charts saved to:", output_folder)
