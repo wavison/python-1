@@ -1,0 +1,67 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+
+# === CONFIG ===
+input_csv = "data_budget_plots/scenario_totals_MB.csv"
+symbol_rate = 30  # Msps
+spectral_eff = 3.33  # 16APSK 5/6
+rs_eff = 223/255
+crc_eff = 0.956
+total_eff = rs_eff * crc_eff  # Effective payload efficiency
+pass_durations = [5*60, 10*60, 15*60]  # seconds
+output_folder = "data_budget_plots"
+chart_filename = "download_feasibility.png"
+
+# === CALCULATE NET DATA RATE ===
+gross_rate = spectral_eff * symbol_rate  # Mbps
+net_rate = gross_rate * total_eff        # Mbps
+
+# === LOAD SCENARIO TOTALS ===
+df = pd.read_csv(input_csv)
+
+# === CALCULATE DATA THAT CAN BE DOWNLOADED PER PASS ===
+download_results = []
+for _, row in df.iterrows():
+    scenario = row["Scenario"]
+    total_data = row["Total_Daily_MB"]
+    for duration in pass_durations:
+        available_data = net_rate * duration / 8  # Convert to MB
+        pct_downloaded = min(100.0, (available_data / total_data) * 100)
+        download_results.append({
+            "Scenario": scenario,
+            "PassDuration_min": duration // 60,
+            "Available_MB": round(available_data, 1),
+            "Required_MB": total_data,
+            "Pct_Transferred": round(pct_downloaded, 1)
+        })
+
+df_result = pd.DataFrame(download_results)
+
+# === PLOT % TRANSFERRED PER SCENARIO ===
+fig, ax = plt.subplots(figsize=(10, 6))
+for duration in sorted(df_result["PassDuration_min"].unique()):
+    subset = df_result[df_result["PassDuration_min"] == duration]
+    ax.bar(subset["Scenario"] + f" ({duration} min)", subset["Pct_Transferred"], label=f"{duration} min")
+
+ax.axhline(100, color="gray", linestyle="--", linewidth=1)
+ax.set_ylabel("% of Data Transferred")
+ax.set_title("Data Transferred per Scenario using 16APSK 5/6")
+plt.xticks(rotation=45)
+plt.ylim(0, 110)
+plt.legend(title="Pass Duration")
+plt.tight_layout()
+
+# === SAVE CHART ===
+os.makedirs(output_folder, exist_ok=True)
+chart_path = os.path.join(output_folder, chart_filename)
+plt.savefig(chart_path, dpi=300)
+plt.close()
+
+# === SAVE RESULTS TABLE TO CSV ===
+results_csv_path = os.path.join(output_folder, "download_feasibility.csv")
+df_result.to_csv(results_csv_path, index=False)
+
+print(f"✅ Chart saved to: {chart_path}")
+print(f"✅ Table saved to: {results_csv_path}")
