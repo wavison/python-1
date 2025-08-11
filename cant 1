@@ -1,0 +1,45 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import re
+
+# --- Load CSV ---
+file_path = "aggregated_power_orbit_table.csv"  # Update if needed
+df = pd.read_csv(file_path)
+
+# --- Extract "AVERAGE POWER PER ORBIT [W]" row ---
+power_row = df.iloc[4, 1:]  # row index 4 is the average power per orbit
+
+# --- Parse columns into LTAN, Cant, Power ---
+data = []
+for col, val in power_row.items():
+    match = re.match(
+        r'orbit_500_ltan_(\d+)_output_([+-]?\d+)_VELOCITY_NADIR_output\.txt',
+        col
+    )
+    if match:
+        ltan = int(match.group(1))
+        cant = int(match.group(2))
+        data.append({"LTAN": ltan, "Cant": cant, "Power": float(val)})
+
+df_plot = pd.DataFrame(data)
+
+# --- Sort for plotting ---
+df_plot.sort_values(by=["LTAN", "Cant"], inplace=True)
+
+# --- Plot ---
+plt.figure(figsize=(10, 6))
+for ltan, group in df_plot.groupby("LTAN"):
+    plt.plot(group["Cant"], group["Power"], marker="o", label=f"LTAN {ltan}")
+
+plt.xlabel("Panel Canting [deg]")
+plt.ylabel("Average Power per Orbit [W]")
+plt.title("Average Power per Orbit vs Panel Canting for Different LTANs")
+plt.legend(title="LTAN")
+plt.grid(True)
+plt.tight_layout()
+
+# --- Save to PNG ---
+plt.savefig("average_power_vs_canting.png", dpi=300)
+plt.close()
+
+print("Chart saved as average_power_vs_canting.png")
