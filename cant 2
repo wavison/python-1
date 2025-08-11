@@ -1,0 +1,99 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import re
+import math
+
+# --- Load CSV ---
+file_path = "aggregated_power_orbit_table.csv"  # Update if needed
+df = pd.read_csv(file_path)
+
+# --- Extract "AVERAGE POWER PER ORBIT [W]" row ---
+power_row = df.iloc[4, 1:]  # row index 4 is the average power per orbit
+
+# --- Parse columns into LTAN, Cant, Power ---
+data = []
+for col, val in power_row.items():
+    match = re.match(
+        r'orbit_500_ltan_(\d+)_output_([+-]?\d+)_VELOCITY_NADIR_output\.txt',
+        col
+    )
+    if match:
+        ltan = int(match.group(1))
+        cant = int(match.group(2))
+        try:
+            p = float(val)
+            if math.isfinite(p):
+                data.append({"LTAN": ltan, "Cant": cant, "Power": p})
+        except Exception:
+            pass
+
+df_plot = pd.DataFrame(data)
+
+# --- Ensure canting order is -10, 0, 10, 15, 20, 25, 30 ---
+cant_order = [-10, 0, 10, 15, 20, 25, 30]
+df_plot["Cant"] = pd.Categorical(df_plot["Cant"], categories=cant_order, ordered=True)
+df_plot.sort_values(by=["LTAN", "Cant"], inplace=True)
+
+# --- Sort LTANs for nice ordering ---
+ltan_values = sorted(df_plot["LTAN"].unique())
+cant_values = cant_order
+
+# --- Pastel colours for LTANs ---
+ltan_colors = {
+    9:  "#aec7e8",  # pastel blue
+    10: "#ffbb78",  # pastel orange
+    12: "#98df8a",  # pastel green
+    15: "#ff9896"   # pastel red
+}
+
+# --- Bar plotting (grouped by LTAN) ---
+bar_width = 0.10            # bar width
+intra_gap = 0.01            # space between bars within an LTAN group
+group_gap = 0.15            # extra gap between LTAN groups
+plt.figure(figsize=(11, 6))
+
+max_power = df_plot["Power"].max() if not df_plot.empty else 0
+label_pad = 0.01 * max_power  # vertical padding for labels
+
+handles = []
+group_centers = []
+for i, ltan in enumerate(ltan_values):
+    subset = df_plot[df_plot["LTAN"] == ltan]
+    x_base = i * (len(cant_values) * (bar_width + intra_gap) + group_gap)
+
+    for j, cant in enumerate(cant_values):
+        y = subset.loc[subset["Cant"] == cant, "Power"].values
+        if y.size == 0:
+            continue
+        y = float(y[0])
+        x = x_base + j * (bar_width + intra_gap)
+
+        # Bar
+        plt.bar(x, y, width=bar_width, color=ltan_colors.get(ltan, "#cccccc"),
+                edgecolor="black", linewidth=0.5)
+
+        # Label (cant angle) above bar
+        plt.text(x, y + label_pad, f"{cant}°", ha="center", va="bottom", fontsize=8, rotation=0)
+
+    # Track center of this LTAN group for xtick placement
+    center = x_base + (len(cant_values) - 1) * (bar_width + intra_gap) / 2
+    group_centers.append(center)
+    handles.append(plt.Rectangle((0, 0), 1, 1, color=ltan_colors.get(ltan, "#cccccc"), ec="black", lw=0.5))
+
+# --- Axes, grid, legend ---
+plt.xticks(group_centers, [f"LTAN {lt}" for lt in ltan_values])
+plt.xlabel("LTAN")
+plt.ylabel("Average Power per Orbit [W]")
+plt.title("Average Power per Orbit by LTAN with Cant Angle)")
+plt.grid(axis="y", linestyle="--", alpha=0.7)
+plt.legend(handles, [f"LTAN {lt}" for lt in ltan_values], title="LTAN", loc="best")
+
+# Add a little headroom for labels
+plt.ylim(top=max_power * 1.08 if max_power else None)
+
+plt.tight_layout()
+plt.savefig("average_power_ltan_pastel_labeled.png", dpi=300)
+plt.close()
+
+print("Chart saved as average_power_ltan_pastel_labeled.png")
