@@ -1,0 +1,80 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import re
+
+# --- Load CSV ---
+file_path = "aggregated_power_orbit_table_all_modes.csv"  # update path if needed
+df = pd.read_csv(file_path)
+
+# --- Extract the "AVERAGE POWER PER ORBIT [W]" row ---
+power_row = df.iloc[4, 1:]  # skip the first column
+
+# --- Parse columns into Altitude, LTAN, Mode, Power ---
+data = []
+pattern = re.compile(
+    r"orbit_(\d+)_ltan_(\d+)_output_(.+?)_output\.txt"
+)
+for col, val in power_row.items():
+    m = pattern.match(col)
+    if m:
+        alt = int(m.group(1))
+        ltan = int(m.group(2))
+        mode = m.group(3)  # e.g., SUN_GS, VELOCITY_NADIR
+        data.append({
+            "Altitude": alt,
+            "LTAN": ltan,
+            "Mode": mode,
+            "Power": float(val)
+        })
+
+df_plot = pd.DataFrame(data)
+
+# --- Filter to a single altitude if desired ---
+altitude_filter = 500
+df_plot = df_plot[df_plot["Altitude"] == altitude_filter]
+
+# --- Sort LTANs and Modes for consistent order ---
+ltan_order = sorted(df_plot["LTAN"].unique())
+mode_order = sorted(df_plot["Mode"].unique())
+
+# ---------- 1. Grouped by LTAN ----------
+plt.figure(figsize=(10, 6))
+bar_width = 0.12
+for i, mode in enumerate(mode_order):
+    subset = df_plot[df_plot["Mode"] == mode]
+    subset = subset.set_index("LTAN").reindex(ltan_order)
+    x_positions = [x + i * bar_width for x in range(len(ltan_order))]
+    plt.bar(x_positions, subset["Power"], width=bar_width, label=mode)
+
+plt.xticks([x + bar_width*(len(mode_order)-1)/2 for x in range(len(ltan_order))],
+           [f"LTAN {l}" for l in ltan_order])
+plt.xlabel("LTAN")
+plt.ylabel("Average Power per Orbit [W]")
+plt.title(f"Average Power per Orbit by LTAN (Altitude {altitude_filter} km)")
+plt.legend(title="Operational Mode", bbox_to_anchor=(1.05, 1), loc="upper left")
+plt.grid(axis="y", linestyle="--", alpha=0.7)
+plt.tight_layout()
+plt.savefig("power_by_ltan.png", dpi=300)
+plt.close()
+
+# ---------- 2. Grouped by Operational Mode ----------
+plt.figure(figsize=(10, 6))
+bar_width = 0.12
+for i, ltan in enumerate(ltan_order):
+    subset = df_plot[df_plot["LTAN"] == ltan]
+    subset = subset.set_index("Mode").reindex(mode_order)
+    x_positions = [x + i * bar_width for x in range(len(mode_order))]
+    plt.bar(x_positions, subset["Power"], width=bar_width, label=f"LTAN {ltan}")
+
+plt.xticks([x + bar_width*(len(ltan_order)-1)/2 for x in range(len(mode_order))],
+           mode_order, rotation=45, ha="right")
+plt.xlabel("Operational Mode")
+plt.ylabel("Average Power per Orbit [W]")
+plt.title(f"Average Power per Orbit by Operational Mode (Altitude {altitude_filter} km)")
+plt.legend(title="LTAN", bbox_to_anchor=(1.05, 1), loc="upper left")
+plt.grid(axis="y", linestyle="--", alpha=0.7)
+plt.tight_layout()
+plt.savefig("power_by_mode.png", dpi=300)
+plt.close()
+
+print("Charts saved: power_by_ltan.png and power_by_mode.png")
