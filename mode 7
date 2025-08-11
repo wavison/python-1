@@ -1,0 +1,84 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import re
+
+# === Load the CSV overview ===
+csv_path = "OAP_analysis_overview.csv"  # path to your CSV file
+df = pd.read_csv(csv_path)
+
+# Column containing the values to plot
+param_col = "AVERAGE POWER PER ORBIT [W]"
+
+# Files to plot (in order)
+files_plot = [
+    "orbit_500_ltan_9_output_SUN_GS_output.txt",
+    "orbit_500_ltan_9_output_SUN_NADIR_output.txt",
+    "orbit_500_ltan_9_output_SUN_VELOCITY_output.txt",
+    "orbit_500_ltan_9_output_VELOCITY_GS_output.txt",
+    "orbit_500_ltan_9_output_VELOCITY_NADIR_output.txt",
+    "orbit_500_ltan_9_output_VELOCITY_SUN_output.txt",
+    "orbit_600_ltan_12_output_SUN_GS_output.txt",
+    "orbit_600_ltan_12_output_SUN_NADIR_output.txt",
+    "orbit_600_ltan_12_output_SUN_VELOCITY_output.txt",
+    "orbit_600_ltan_12_output_VELOCITY_GS_output.txt",
+    "orbit_600_ltan_12_output_VELOCITY_NADIR_output.txt",
+    "orbit_600_ltan_12_output_VELOCITY_SUN_output.txt",
+    "orbit_600_ltan_15_output_SUN_GS_output.txt",
+    "orbit_600_ltan_15_output_SUN_NADIR_output.txt",
+    "orbit_600_ltan_15_output_SUN_VELOCITY_output.txt",
+    "orbit_600_ltan_15_output_VELOCITY_GS_output.txt",
+    "orbit_600_ltan_15_output_VELOCITY_NADIR_output.txt",
+    "orbit_600_ltan_15_output_VELOCITY_SUN_output.txt",
+    "orbit_600_ltan_9_output_SUN_GS_output.txt",
+    "orbit_600_ltan_9_output_SUN_NADIR_output.txt",
+    "orbit_600_ltan_9_output_SUN_VELOCITY_output.txt",
+    "orbit_600_ltan_9_output_VELOCITY_GS_output.txt",
+    "orbit_600_ltan_9_output_VELOCITY_NADIR_output.txt",
+    "orbit_600_ltan_9_output_VELOCITY_SUN_output.txt",
+    "orbit_500_ltan_12_output_SUN_GS_output.txt",
+    "orbit_500_ltan_12_output_SUN_NADIR_output.txt",
+    "orbit_500_ltan_12_output_SUN_VELOCITY_output.txt",
+    "orbit_500_ltan_12_output_VELOCITY_GS_output.txt",
+    "orbit_500_ltan_12_output_VELOCITY_NADIR_output.txt",
+    "orbit_500_ltan_12_output_VELOCITY_SUN_output.txt",
+    "orbit_500_ltan_15_output_SUN_GS_output.txt",
+    "orbit_500_ltan_15_output_SUN_NADIR_output.txt",
+    "orbit_500_ltan_15_output_SUN_VELOCITY_output.txt",
+    "orbit_500_ltan_15_output_VELOCITY_GS_output.txt",
+    "orbit_500_ltan_15_output_VELOCITY_NADIR_output.txt",
+    "orbit_500_ltan_15_output_VELOCITY_SUN_output.txt",
+]
+
+# Helper to make nice labels
+pat = re.compile(r"orbit_(\d+)_ltan_(\d+)_output_(.+?)_output\.txt")
+def friendly_label(fname: str) -> str:
+    m = pat.match(fname)
+    if not m:
+        return fname
+    alt, ltan, middle = m.groups()
+    return f"{alt} km LTAN {ltan} — {middle.replace('_', ' ')}"
+
+# Filter and order the data
+sub = df[df["File"].isin(files_plot)].copy()
+sub["order"] = sub["File"].apply(lambda f: files_plot.index(f))
+sub.sort_values("order", inplace=True)
+
+# Labels and values for plotting
+labels = [friendly_label(f) for f in sub["File"]]
+values = sub[param_col].astype(float).tolist()
+
+# === Plot ===
+plt.figure(figsize=(14, 6))
+plt.bar(range(len(values)), values, color="#aec7e8", edgecolor="black")
+plt.xticks(range(len(labels)), labels, rotation=70, ha="right")
+plt.ylabel(param_col)
+plt.title("Average Power per Orbit — Multiple LTANs, Altitudes, and Modes")
+plt.grid(axis="y", linestyle="--", alpha=0.7)
+plt.tight_layout()
+
+# Save to PNG
+out_path = "plot_modes_multiple_ltan_altitudes.png"
+plt.savefig(out_path, dpi=300)
+plt.close()
+
+print(f"Saved plot to {out_path}")
