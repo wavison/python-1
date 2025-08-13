@@ -1,0 +1,161 @@
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# === Configurable Parameters ===
+mode_schedule_path = "mode_schedule_ditl.csv"
+power_generation_path = "merged_power_generation_normalized.csv"
+power_matrix_path = "power_analysis/power_matrix_structured.csv"
+
+battery_capacity_wh = 198.24        # BOL capacity (Wh)
+initial_soc_percent = 50            # Starting SoC (%)
+dod_threshold_percent = 30          # DoD line (%)
+sample_interval_min = 1             # 1-minute time steps
+
+solar_degradation_factor_nominal = 0.94  # 6% loss
+solar_degradation_factor_worst = 0.85    # 15% loss
+battery_degradation_factor_nominal = 1.00
+battery_degradation_factor_worst = 0.85
+load_increase_factor_worst = 1.05        # 5% more power needed
+
+# === Ensure output dir exists ===
+os.makedirs("power_analysis", exist_ok=True)
+
+# === Load Data ===
+mode_schedule_df = pd.read_csv(mode_schedule_path)
+power_generation_df = pd.read_csv(power_generation_path)
+power_matrix_df = pd.read_csv(power_matrix_path)
+
+# Normalize labels
+mode_schedule_df["mode"] = mode_schedule_df["mode"].astype(str).str.strip().str.lower()
+power_matrix_df["Mode"] = power_matrix_df["Mode"].astype(str).str.strip().str.lower()
+
+# Map modes to power draw
+mode_to_power = power_matrix_df.set_index("Mode")["Total Power (W)"].to_dict()
+
+# === Build time series with a single global phase ===
+generated_power = []
+required_power = []
+time_axis_minutes = []
+
+elapsed_minutes = 0
+mode_index = 0
+total_time_minutes = int(mode_schedule_df["time in mode"].sum())
+
+global_phase_idx = 0  # single rolling phase across all segments
+
+while elapsed_minutes < total_time_minutes:
+    row = mode_schedule_df.iloc[mode_index % len(mode_schedule_df)]
+    mode = row["mode"]
+    mode_duration = int(row["time in mode"])
+    power_col = row["power generated"]
+
+    num_samples = mode_duration  # 1-min sampling
+
+    if power_col in power_generation_df.columns:
+        # Use clean solar series for this column
+        series = power_generation_df[power_col].dropna().values
+        if len(series) == 0:
+            tiled_power = [0] * num_samples
+        else:
+            L = len(series)
+            start = global_phase_idx % L
+            idx = (start + np.arange(num_samples)) % L
+            tiled_power = series[idx].tolist()
+            global_phase_idx = (global_phase_idx + num_samples) % L
+    else:
+        tiled_power = [0] * num_samples  # unknown column → assume 0 generation
+
+    power_required = float(mode_to_power.get(mode, 0.0))
+    required_segment = [power_required] * num_samples
+
+    generated_power.extend(tiled_power)
+    required_power.extend(required_segment)
+    time_axis_minutes.extend(range(elapsed_minutes, elapsed_minutes + num_samples))
+
+    elapsed_minutes += num_samples
+    mode_index += 1
+
+# --- SoC Helper Function ---
+def compute_soc(delta_power_series, degradation_factor):
+    """Return SoC (%) time series given delta power (W) and degraded capacity."""
+    delta_wh = [dp * (sample_interval_min / 60.0) for dp in delta_power_series]
+    soc = []
+    degraded_capacity = battery_capacity_wh * degradation_factor
+    current_soc_wh = degraded_capacity * (initial_soc_percent / 100.0)
+
+    for dwh in delta_wh:
+        current_soc_wh += dwh
+        current_soc_wh = max(0.0, min(degraded_capacity, current_soc_wh))
+        soc.append((current_soc_wh / degraded_capacity) * 100.0)
+    return soc
+
+# === Nominal Case ===
+generated_power_nominal = [g * solar_degradation_factor_nominal for g in generated_power]
+delta_power_nominal = [g - r for g, r in zip(generated_power_nominal, required_power)]
+soc_nominal = compute_soc(delta_power_nominal, battery_degradation_factor_nominal)
+
+# === Worst Case (Solar + Battery + Load Increase) ===
+generated_power_worst = [g * solar_degradation_factor_worst for g in generated_power]
+required_power_worst = [r * load_increase_factor_worst for r in required_power]
+delta_power_worst = [g - r for g, r in zip(generated_power_worst, required_power_worst)]
+soc_worst = compute_soc(delta_power_worst, battery_degradation_factor_worst)
+
+# === Save All Charts as PNG ===
+plt.figure(figsize=(14, 6))
+plt.plot(time_axis_minutes, generated_power_nominal, label="Power Generated (W) @ 6% Degradation", color="green")
+plt.plot(time_axis_minutes, required_power, label="Power Required (W)", color="red")
+plt.plot(time_axis_minutes, delta_power_nominal, label="Power Surplus/Deficit (W)", color="blue", linestyle=":")
+plt.axhline(0, color='black', linestyle='--', linewidth=0.8)
+plt.title("Power Budget — 6% Solar Degradation, No Battery Degradation")
+plt.xlabel("Time (minutes)")
+plt.ylabel("Power (Watts)")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig("power_analysis/01_nominal_power_budget.png")
+plt.close()
+
+plt.figure(figsize=(14, 4))
+plt.plot(time_axis_minutes, soc_nominal, label="Battery SoC (%)", color="purple")
+plt.axhline(dod_threshold_percent, color='orange', linestyle=':', linewidth=2, label="30% DoD Threshold")
+plt.title("Battery SoC — 6% Solar Degradation, No Battery Degradation")
+plt.xlabel("Time (minutes)")
+plt.ylabel("State of Charge (%)")
+plt.ylim(0, 100)
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig("power_analysis/02_nominal_soc.png")
+plt.close()
+
+plt.figure(figsize=(14, 6))
+plt.plot(time_axis_minutes, generated_power_worst, label="Power Generated (W) @ 15% Degradation", color="green")
+plt.plot(time_axis_minutes, required_power_worst, label="Power Required (W) +5%", color="red")
+plt.plot(time_axis_minutes, delta_power_worst, label="Power Surplus/Deficit (W)", color="blue", linestyle=":")
+plt.axhline(0, color='black', linestyle='--', linewidth=0.8)
+plt.title("Power Budget — 15% Solar/Battery Degradation, +5% Power Consumption")
+plt.xlabel("Time (minutes)")
+plt.ylabel("Power (Watts)")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig("power_analysis/03_worstcase_power_budget.png")
+plt.close()
+
+plt.figure(figsize=(14, 4))
+plt.plot(time_axis_minutes, soc_worst,
+         label="Battery SoC (%) @ 15% Solar/Battery Degradation + 5% Load", color="purple")
+plt.axhline(dod_threshold_percent, color='orange', linestyle=':', linewidth=2, label="30% DoD Threshold")
+plt.title("Battery SoC — 15% Solar/Battery Degradation, +5% Power Consumption")
+plt.xlabel("Time (minutes)")
+plt.ylabel("State of Charge (%)")
+plt.ylim(0, 100)
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.savefig("power_analysis/04_worstcase_soc.png")
+plt.close()
+
+print("✅ Charts saved as PNG files in power_analysis/")
