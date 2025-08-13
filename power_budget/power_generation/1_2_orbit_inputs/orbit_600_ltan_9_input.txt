@@ -1,0 +1,11 @@
+SCENARIO=SSO_TO_KEPLERIAN_CONVERSION
+DATE=2027-03-01T12:00:00Z
+# Specify only 2 out of the 3 following properties:
+ALTITUDE_MET=600000.0
+ECCENTRICITY=0.0
+#INCLINATION_DEG=97.6
+# Local time of ascending node [0-24]
+LTAN_HOURS=9
+# Argument of perigee and true anomaly
+W_DEG=0.0
+TA_DEG=0.0
